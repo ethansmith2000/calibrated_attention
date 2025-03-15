@@ -63,9 +63,7 @@ class AttentionBase(nn.Module):
     def forward(self, x):
         b, n, d, h = (*x.shape, self.heads)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=h), (self.to_q(x), self.to_k(x), self.to_v(x)))
-        out = sdpa(q, k, v, is_causal=True)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out)
+        return self.to_out(rearrange(sdpa(q, k, v, is_causal=True), 'b h n d -> b n (h d)'))
     
 
 
