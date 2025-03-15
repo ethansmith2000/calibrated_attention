@@ -262,7 +262,7 @@ class SoftmaxPlusN(AttentionBase):
         modified_denom = denom + torch.exp(self.denom_bias)
         
         # compute attention weights
-        attn = masked_eexp_simxp_sim / modified_denom
+        attn = exp_sim / modified_denom
         
         # apply attention to values
         out = torch.einsum('b h i j, b h j d -> b h i d', attn, v)
@@ -305,7 +305,8 @@ class SoftmaxPlusFN(AttentionBase):
         denom = exp_sim.sum(dim=-1, keepdim=True)
         
         # apply alpha and beta parameters to modify the denominator
-        modified_denom = denom * torch.exp(self.alphas) + torch.exp(self.betas)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        modified_denom = denom + torch.exp(self.alphas * torch.log(seq_lens[None,None,:,None]) + self.betas)
         
         # compute attention weights
         attn = exp_sim / modified_denom
