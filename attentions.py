@@ -232,6 +232,8 @@ class SoftmaxPlusN(AttentionBase):
 
     presently only set up for causal attention where q, k, v all have the same shape, 
     so kv cached inference not yet supported
+
+    in desperate need of at least a softmax kernel if not fully fused attention
     """
     def __init__(self, dim=512, heads=8):
         super().__init__(dim, heads)
@@ -252,7 +254,8 @@ class SoftmaxPlusN(AttentionBase):
         sim = sim.masked_fill(mask, -torch.finfo(sim.dtype).max)
         
         # apply softmax
-        exp_sim = torch.exp(sim)
+        sim_max = torch.max(sim, dim=-1, keepdim=True)[0]
+        exp_sim = torch.exp(sim - sim_max)
         
         # compute denominator (sum along dim=-1)
         # we'll modify this with learned parameters
@@ -277,6 +280,8 @@ class SoftmaxPlusFN(AttentionBase):
 
     presently only set up for causal attention where q, k, v all have the same shape, 
     so kv cached inference not yet supported
+
+    in desperate need of at least a softmax kernel if not fully fused attention
     """
     def __init__(self, dim=512, heads=8):
         super().__init__(dim, heads)
@@ -298,7 +303,8 @@ class SoftmaxPlusFN(AttentionBase):
         sim = sim.masked_fill(mask, -torch.finfo(sim.dtype).max)
         
         # apply softmax
-        exp_sim = torch.exp(sim)
+        sim_max = torch.max(sim, dim=-1, keepdim=True)[0]
+        exp_sim = torch.exp(sim - sim_max)
         
         # compute denominator (sum along dim=-1)
         # we'll modify this with learned parameters
