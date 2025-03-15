@@ -226,7 +226,7 @@ class AttentionLearnedScaling(AttentionBase):
         return self.to_out(out)
 
 
-class SoftmaxPlusN(AttentionBase):
+class AttentionSoftmaxPlusOne(AttentionBase):
     """
     Inspired by softmax plus one, but instead learning the constant
 
@@ -274,7 +274,7 @@ class SoftmaxPlusN(AttentionBase):
         return self.to_out(out)
 
 
-class SoftmaxPlusFN(AttentionBase):
+class AttentionSoftmaxPlusFN(AttentionBase):
     """
     Inspired by softmax plus one, but instead letting the denominator be a learned function of sequence length
 
