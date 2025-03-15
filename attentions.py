@@ -205,10 +205,14 @@ class AttentionLearnedScaling(AttentionBase):
     #     scales are computed as a residual to the base scaling:
     #     base_scale = head_dim ** 0.5
     #     scales = (alphas * log(seq_len) + betas) + base_scale
+
+    #     need to avoid 0 denominator, (and negative denom as well?)
+    #     so we'll relu the scales and add an eps
     #     """
     #     log_seq_lens = torch.log(seq_lens[None,None,:,None])
     #     learned_scale = self.alphas * log_seq_lens + self.betas
     #     scales = learned_scale + self.base_scale
+    #     scales = torch.relu(scales) + 1e-6 # avoid 0
     #     scales = 1 / scales
     #     return scales
 
@@ -217,9 +221,13 @@ class AttentionLearnedScaling(AttentionBase):
         scales are computed as a multiplier to the base scaling:
         base_scale = head_dim ** 0.5
         scales = (alphas * log(seq_len) + betas) + base_scale
+
+        need to avoid 0 denominator, (and negative denom as well?)
+        so we'll relu the multiplier and add an eps
         """
         log_seq_lens = torch.log(seq_lens[None,None,:,None])
         multiplier = 1 + self.alphas * log_seq_lens + self.betas
+        multiplier = torch.relu(multiplier) + 1e-6 # avoid 0
         scales = multiplier * self.base_scale
         scales = 1 / scales
         return scales
@@ -278,6 +286,9 @@ class AttentionSoftmaxPlusOne(AttentionBase):
         
         # apply alpha and beta parameters to modify the denominator
         modified_denom = denom + torch.exp(self.denom_bias)
+
+        # make sure denom is not 0
+        modified_denom = torch.relu(modified_denom) + 1e-6
         
         # compute attention weights
         attn = exp_sim / modified_denom
@@ -328,6 +339,9 @@ class AttentionSoftmaxPlusFN(AttentionBase):
         # apply alpha and beta parameters to modify the denominator
         seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
         modified_denom = denom + torch.exp(self.alphas * torch.log(seq_lens[None,None,:,None]) + self.betas)
+
+        # make sure denom is not 0
+        modified_denom = torch.relu(modified_denom) + 1e-6
         
         # compute attention weights
         attn = exp_sim / modified_denom
