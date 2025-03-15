@@ -189,8 +189,6 @@ class AttentionLearnedScaling(AttentionBase):
     """
     A learned function to provide sequence length dependent scaling, per head
 
-    scales are computed as a residual to the base scaling:
-    scales = (alphas * log(seq_len) + betas) + base_scale
 
     presently only set up for causal attention where q, k, v all have the same shape, 
     so kv cached inference not yet supported
@@ -202,10 +200,27 @@ class AttentionLearnedScaling(AttentionBase):
         self.head_dim = dim / heads
         self.base_scale = self.head_dim ** 0.5
 
+    # def create_scaling(self, seq_lens):
+    #     """
+    #     scales are computed as a residual to the base scaling:
+    #     base_scale = head_dim ** 0.5
+    #     scales = (alphas * log(seq_len) + betas) + base_scale
+    #     """
+    #     log_seq_lens = torch.log(seq_lens[None,None,:,None])
+    #     learned_scale = self.alphas * log_seq_lens + self.betas
+    #     scales = learned_scale + self.base_scale
+    #     scales = 1 / scales
+    #     return scales
+
     def create_scaling(self, seq_lens):
+        """
+        scales are computed as a multiplier to the base scaling:
+        base_scale = head_dim ** 0.5
+        scales = (alphas * log(seq_len) + betas) + base_scale
+        """
         log_seq_lens = torch.log(seq_lens[None,None,:,None])
-        learned_scale = self.alphas * log_seq_lens + self.betas
-        scales = learned_scale + self.base_scale
+        multiplier = 1 + self.alphas * log_seq_lens + self.betas
+        scales = multiplier * self.base_scale
         scales = 1 / scales
         return scales
 
