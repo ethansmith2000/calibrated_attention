@@ -81,7 +81,7 @@ class AttentionRelativeScaling1(AttentionBase):
         b, n, d, h = (*x.shape, self.heads)
 
         # get scales (n,)
-        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype) + 1
         scales = relative_scaling(seq_lens, d / self.heads, self.base_seq_len) # (1, 1, n, 1)
 
         # instead of applying scale to QK matrix, we can just mult the queries (or keys) its all linear!
@@ -115,7 +115,7 @@ class AttentionRelativeScaling2(AttentionBase):
         b, n, d, h = (*x.shape, self.heads)
 
         # get scales (n,)
-        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype) + 1
         scales = relative_scaling_2(seq_lens, d / self.heads, self.attn_bias, self.base_seq_len) # (1, h, n, 1)
 
         # instead of applying scale to QK matrix, we can just mult the queries (or keys) its all linear!
@@ -139,7 +139,7 @@ class AttentionYarnScaling(AttentionBase):
         b, n, d, h = (*x.shape, self.heads)
 
         # get scales (n,)
-        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype) + 1
         scales = yarn_scaling(seq_lens, d / self.heads)
 
         # instead of applying scale to QK matrix, we can just mult the queries (or keys) its all linear!
@@ -234,7 +234,7 @@ class AttentionLearnedScaling(AttentionBase):
         b, n, d, h = (*x.shape, self.heads)
 
         # get scales (n,)
-        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype) + 1
         scales = self.create_scaling(seq_lens)
 
         # instead of applying scale to QK matrix, we can just mult the queries (or keys) its all linear!
@@ -335,7 +335,7 @@ class AttentionSoftmaxPlusFN(AttentionBase):
         denom = exp_sim.sum(dim=-1, keepdim=True)
         
         # apply alpha and beta parameters to modify the denominator
-        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype)
+        seq_lens = torch.arange(n, device=x.device, dtype=x.dtype) + 1
         modified_denom = denom + torch.exp(self.alphas * torch.log(seq_lens[None,None,:,None]) + self.betas)
 
         # make sure denom is not 0
